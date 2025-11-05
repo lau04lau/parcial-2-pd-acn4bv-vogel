@@ -1,0 +1,14 @@
+{
+  "name": "gestor-historial",
+  "version": "1.0.0",
+  "description": "Servidor Express para gestionar pacientes, terapeutas e historiales clínicos.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "Laura Vogel",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.0"
+  }
+}
