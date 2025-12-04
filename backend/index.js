@@ -145,6 +145,19 @@ app.get("/pacientes", (req, res) => {
   const data = readJson(pacientesFile)
   res.json(data)
 })
+app.get("/pacientes/:id", (req, res) => {
+  const data = readJson(pacientesFile)
+  const id = Number(req.params.id)
+
+  const paciente = data.find(p => p.id === id)
+
+  if (!paciente) {
+    return res.status(404).json({ error: "Paciente no encontrado" })
+  }
+
+  res.json(paciente)
+})
+
 
 app.post("/pacientes", validarPacienteCrear, (req, res) => {
   const data = readJson(pacientesFile)

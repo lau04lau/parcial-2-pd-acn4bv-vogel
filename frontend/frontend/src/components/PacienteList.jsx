@@ -83,6 +83,9 @@ function PacienteList({ pacientes, onEliminar }) {
                       {p.nombre} {p.apellido}
                     </button>
                   </td>
+
+
+                  
                   <td className="px-3 py-2 truncate">{p.dni}</td>
                   <td className="px-3 py-2 truncate">{p.telefono}</td>
                   <td className="px-3 py-2 truncate">{p.nivelEducativo}</td>

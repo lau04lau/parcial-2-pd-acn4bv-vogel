@@ -1,13 +1,40 @@
-import React from "react"
+import React, { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 
-function DetallePaciente({ pacientes }) {
+function DetallePaciente() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const paciente = pacientes.find(p => String(p.id) === id)
+  const [paciente, setPaciente] = useState(null)
+  const [cargando, setCargando] = useState(true)
+  const [error, setError] = useState("")
+
+  useEffect(() => {
+    const obtenerPaciente = async () => {
+      try {
+        const res = await fetch(`/pacientes/${id}`)
+        if (!res.ok) throw new Error("No se pudo obtener la información del paciente")
+        const data = await res.json()
+        setPaciente(data)
+      } catch (err) {
+        setError(err.message)
+      } finally {
+        setCargando(false)
+      }
+    }
+
+    obtenerPaciente()
+  }, [id])
+
+  if (cargando) {
+    return <p className="text-[#edf8f9] text-center">Cargando datos del paciente...</p>
+  }
+
+  if (error) {
+    return <p className="text-[#ffd1d1] text-center">{error}</p>
+  }
 
   if (!paciente) {
-    return <p className="text-[#ffd1d1]">Paciente no encontrado.</p>
+    return <p className="text-[#ffd1d1] text-center">Paciente no encontrado.</p>
   }
 
   return (
