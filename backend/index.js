@@ -1,13 +1,76 @@
 const express = require("express")
 const bcrypt = require("bcrypt")
+<<<<<<< HEAD
 const db = require("./db")
 const pacienteModel = require("./models/pacienteModel")
 const terapeutaModel = require("./models/terapeutaModel")
 const historialModel = require("./models/historialModel")
+=======
+const sqlite3 = require("sqlite3").verbose()
+>>>>>>> 2951dc39c57b41afa55b85a85592f8307850fb52
 
 const app = express()
 app.use(express.json())
 
+<<<<<<< HEAD
+=======
+const dataDir = path.join(__dirname, "data")
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir)
+}
+
+const dbPath = path.join(dataDir, "database.sqlite")
+const db = new sqlite3.Database(dbPath)
+
+db.serialize(() => {
+  db.run(`
+    CREATE TABLE IF NOT EXISTS pacientes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nombre TEXT NOT NULL,
+      apellido TEXT NOT NULL,
+      dni TEXT NOT NULL UNIQUE,
+      telefono TEXT NOT NULL,
+      fechaNac TEXT NOT NULL,
+      motivoConsulta TEXT,
+      nivelEducativo TEXT NOT NULL,
+      gradoCurso INTEGER NOT NULL,
+      genero TEXT NOT NULL
+    )
+  `)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS terapeutas (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      usuario TEXT NOT NULL UNIQUE,
+      contrasenia TEXT NOT NULL
+    )
+  `)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS historiales (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      pacienteId INTEGER NOT NULL,
+      terapeutaId INTEGER NOT NULL,
+      fecha TEXT NOT NULL,
+      descripcion TEXT NOT NULL,
+      tipoRegistro TEXT NOT NULL,
+      FOREIGN KEY (pacienteId) REFERENCES pacientes(id),
+      FOREIGN KEY (terapeutaId) REFERENCES terapeutas(id)
+    )
+  `)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS tipos_registro (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nombre TEXT NOT NULL UNIQUE
+    )
+  `)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS niveles_educativos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nombre TEXT NOT NULL UNIQUE
+    )
+  `)
+})
+
+>>>>>>> 2951dc39c57b41afa55b85a85592f8307850fb52
 function normalizarYValidarPaciente(body) {
   const ahora = new Date()
   const nombre = (body.nombre || "").trim()
@@ -71,12 +134,25 @@ function validarPacienteCrear(req, res, next) {
   if (errores.length > 0) {
     return res.status(400).json({ error: errores.join(" | ") })
   }
+<<<<<<< HEAD
   pacienteModel.findByDni(paciente.dni, (err, row) => {
     if (err) return res.status(500).json({ error: "Error al validar paciente" })
     if (row) return res.status(400).json({ error: "El DNI ya se encuentra registrado" })
     req.pacienteNormalizado = paciente
     next()
   })
+=======
+  db.get(
+    "SELECT id FROM pacientes WHERE dni = ?",
+    [paciente.dni],
+    (err, row) => {
+      if (err) return res.status(500).json({ error: "Error al validar paciente" })
+      if (row) return res.status(400).json({ error: "El DNI ya se encuentra registrado" })
+      req.pacienteNormalizado = paciente
+      next()
+    }
+  )
+>>>>>>> 2951dc39c57b41afa55b85a85592f8307850fb52
 }
 
 function validarPacienteEditar(req, res, next) {
@@ -85,12 +161,25 @@ function validarPacienteEditar(req, res, next) {
     return res.status(400).json({ error: errores.join(" | ") })
   }
   const idEditar = Number(req.params.id)
+<<<<<<< HEAD
   pacienteModel.findByDniExcludingId(paciente.dni, idEditar, (err, row) => {
     if (err) return res.status(500).json({ error: "Error al validar paciente" })
     if (row) return res.status(400).json({ error: "El DNI ya se encuentra registrado" })
     req.pacienteNormalizado = paciente
     next()
   })
+=======
+  db.get(
+    "SELECT id FROM pacientes WHERE dni = ? AND id <> ?",
+    [paciente.dni, idEditar],
+    (err, row) => {
+      if (err) return res.status(500).json({ error: "Error al validar paciente" })
+      if (row) return res.status(400).json({ error: "El DNI ya se encuentra registrado" })
+      req.pacienteNormalizado = paciente
+      next()
+    }
+  )
+>>>>>>> 2951dc39c57b41afa55b85a85592f8307850fb52
 }
 
 function validarTerapeuta(req, res, next) {
@@ -135,7 +224,11 @@ function validarNivelEducativo(req, res, next) {
 }
 
 app.get("/pacientes", (req, res) => {
+<<<<<<< HEAD
   pacienteModel.getAll((err, rows) => {
+=======
+  db.all("SELECT * FROM pacientes", [], (err, rows) => {
+>>>>>>> 2951dc39c57b41afa55b85a85592f8307850fb52
     if (err) return res.status(500).json({ error: "Error al obtener pacientes" })
     res.json(rows)
   })
@@ -143,7 +236,11 @@ app.get("/pacientes", (req, res) => {
 
 app.get("/pacientes/:id", (req, res) => {
   const id = Number(req.params.id)
+<<<<<<< HEAD
   pacienteModel.getById(id, (err, row) => {
+=======
+  db.get("SELECT * FROM pacientes WHERE id = ?", [id], (err, row) => {
+>>>>>>> 2951dc39c57b41afa55b85a85592f8307850fb52
     if (err) return res.status(500).json({ error: "Error al obtener paciente" })
     if (!row) return res.status(404).json({ error: "Paciente no encontrado" })
     res.json(row)
@@ -152,33 +249,73 @@ app.get("/pacientes/:id", (req, res) => {
 
 app.post("/pacientes", validarPacienteCrear, (req, res) => {
   const p = req.pacienteNormalizado
+<<<<<<< HEAD
   pacienteModel.create(p, (err, nuevo) => {
     if (err) return res.status(500).json({ error: "Error al guardar paciente" })
     res.status(201).json(nuevo)
   })
+=======
+  db.run(
+    `
+    INSERT INTO pacientes (nombre, apellido, dni, telefono, fechaNac, motivoConsulta, nivelEducativo, gradoCurso, genero)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `,
+    [p.nombre, p.apellido, p.dni, p.telefono, p.fechaNac, p.motivoConsulta, p.nivelEducativo, p.gradoCurso, p.genero],
+    function (err) {
+      if (err) return res.status(500).json({ error: "Error al guardar paciente" })
+      res.status(201).json({ id: this.lastID, ...p })
+    }
+  )
+>>>>>>> 2951dc39c57b41afa55b85a85592f8307850fb52
 })
 
 app.put("/pacientes/:id", validarPacienteEditar, (req, res) => {
   const id = Number(req.params.id)
   const p = req.pacienteNormalizado
+<<<<<<< HEAD
   pacienteModel.update(id, p, (err, changes) => {
     if (err) return res.status(500).json({ error: "Error al actualizar paciente" })
     if (changes === 0) return res.status(404).json({ error: "Paciente no encontrado" })
     res.json({ id, ...p })
   })
+=======
+  db.run(
+    `
+    UPDATE pacientes
+    SET nombre = ?, apellido = ?, dni = ?, telefono = ?, fechaNac = ?, motivoConsulta = ?, nivelEducativo = ?, gradoCurso = ?, genero = ?
+    WHERE id = ?
+  `,
+    [p.nombre, p.apellido, p.dni, p.telefono, p.fechaNac, p.motivoConsulta, p.nivelEducativo, p.gradoCurso, p.genero, id],
+    function (err) {
+      if (err) return res.status(500).json({ error: "Error al actualizar paciente" })
+      if (this.changes === 0) return res.status(404).json({ error: "Paciente no encontrado" })
+      res.json({ id, ...p })
+    }
+  )
+>>>>>>> 2951dc39c57b41afa55b85a85592f8307850fb52
 })
 
 app.delete("/pacientes/:id", (req, res) => {
   const id = Number(req.params.id)
+<<<<<<< HEAD
   pacienteModel.remove(id, (err, changes) => {
     if (err) return res.status(500).json({ error: "Error al eliminar paciente" })
     if (changes === 0) return res.status(404).json({ error: "Paciente no encontrado" })
+=======
+  db.run("DELETE FROM pacientes WHERE id = ?", [id], function (err) {
+    if (err) return res.status(500).json({ error: "Error al eliminar paciente" })
+    if (this.changes === 0) return res.status(404).json({ error: "Paciente no encontrado" })
+>>>>>>> 2951dc39c57b41afa55b85a85592f8307850fb52
     res.json({ ok: true })
   })
 })
 
 app.get("/terapeutas", (req, res) => {
+<<<<<<< HEAD
   terapeutaModel.getAllPublic((err, rows) => {
+=======
+  db.all("SELECT id, usuario FROM terapeutas", [], (err, rows) => {
+>>>>>>> 2951dc39c57b41afa55b85a85592f8307850fb52
     if (err) return res.status(500).json({ error: "Error al obtener terapeutas" })
     res.json(rows)
   })
@@ -187,6 +324,7 @@ app.get("/terapeutas", (req, res) => {
 app.post("/terapeutas", validarTerapeuta, (req, res) => {
   const t = req.terapeutaNormalizado
   const hash = bcrypt.hashSync(t.contrasenia, 10)
+<<<<<<< HEAD
   terapeutaModel.create(t.usuario, hash, (err, nuevo) => {
     if (err) {
       if (err.code === "SQLITE_CONSTRAINT") {
@@ -196,12 +334,28 @@ app.post("/terapeutas", validarTerapeuta, (req, res) => {
     }
     res.status(201).json(nuevo)
   })
+=======
+  db.run(
+    "INSERT INTO terapeutas (usuario, contrasenia) VALUES (?, ?)",
+    [t.usuario, hash],
+    function (err) {
+      if (err) {
+        if (err.code === "SQLITE_CONSTRAINT") {
+          return res.status(400).json({ error: "El usuario ya está registrado" })
+        }
+        return res.status(500).json({ error: "Error al guardar terapeuta" })
+      }
+      res.status(201).json({ id: this.lastID, usuario: t.usuario })
+    }
+  )
+>>>>>>> 2951dc39c57b41afa55b85a85592f8307850fb52
 })
 
 app.put("/terapeutas/:id", validarTerapeuta, (req, res) => {
   const id = Number(req.params.id)
   const t = req.terapeutaNormalizado
   const hash = bcrypt.hashSync(t.contrasenia, 10)
+<<<<<<< HEAD
   terapeutaModel.update(id, t.usuario, hash, (err, changes) => {
     if (err) {
       if (err.code === "SQLITE_CONSTRAINT") {
@@ -212,13 +366,35 @@ app.put("/terapeutas/:id", validarTerapeuta, (req, res) => {
     if (changes === 0) return res.status(404).json({ error: "Terapeuta no encontrado" })
     res.json({ id, usuario: t.usuario })
   })
+=======
+  db.run(
+    "UPDATE terapeutas SET usuario = ?, contrasenia = ? WHERE id = ?",
+    [t.usuario, hash, id],
+    function (err) {
+      if (err) {
+        if (err.code === "SQLITE_CONSTRAINT") {
+          return res.status(400).json({ error: "El usuario ya está registrado" })
+        }
+        return res.status(500).json({ error: "Error al actualizar terapeuta" })
+      }
+      if (this.changes === 0) return res.status(404).json({ error: "Terapeuta no encontrado" })
+      res.json({ id, usuario: t.usuario })
+    }
+  )
+>>>>>>> 2951dc39c57b41afa55b85a85592f8307850fb52
 })
 
 app.delete("/terapeutas/:id", (req, res) => {
   const id = Number(req.params.id)
+<<<<<<< HEAD
   terapeutaModel.remove(id, (err, changes) => {
     if (err) return res.status(500).json({ error: "Error al eliminar terapeuta" })
     if (changes === 0) return res.status(404).json({ error: "Terapeuta no encontrado" })
+=======
+  db.run("DELETE FROM terapeutas WHERE id = ?", [id], function (err) {
+    if (err) return res.status(500).json({ error: "Error al eliminar terapeuta" })
+    if (this.changes === 0) return res.status(404).json({ error: "Terapeuta no encontrado" })
+>>>>>>> 2951dc39c57b41afa55b85a85592f8307850fb52
     res.json({ ok: true })
   })
 })
@@ -229,7 +405,11 @@ app.post("/login-terapeuta", (req, res) => {
   if (!usuario || !contrasenia) {
     return res.status(400).json({ error: "Usuario y contraseña son obligatorios" })
   }
+<<<<<<< HEAD
   terapeutaModel.getByUsuario(usuario, (err, row) => {
+=======
+  db.get("SELECT * FROM terapeutas WHERE usuario = ?", [usuario], (err, row) => {
+>>>>>>> 2951dc39c57b41afa55b85a85592f8307850fb52
     if (err) return res.status(500).json({ error: "Error al iniciar sesión" })
     if (!row) return res.status(401).json({ error: "Usuario o contraseña incorrectos" })
     const coincide = bcrypt.compareSync(contrasenia, row.contrasenia)
@@ -239,7 +419,11 @@ app.post("/login-terapeuta", (req, res) => {
 })
 
 app.get("/historiales", (req, res) => {
+<<<<<<< HEAD
   historialModel.getAll((err, rows) => {
+=======
+  db.all("SELECT * FROM historiales", [], (err, rows) => {
+>>>>>>> 2951dc39c57b41afa55b85a85592f8307850fb52
     if (err) return res.status(500).json({ error: "Error al obtener historiales" })
     res.json(rows)
   })
@@ -247,10 +431,24 @@ app.get("/historiales", (req, res) => {
 
 app.post("/historiales", validarHistorial, (req, res) => {
   const h = req.historialNormalizado
+<<<<<<< HEAD
   historialModel.create(h, (err, nuevo) => {
     if (err) return res.status(500).json({ error: "Error al guardar historial" })
     res.status(201).json(nuevo)
   })
+=======
+  db.run(
+    `
+    INSERT INTO historiales (pacienteId, terapeutaId, fecha, descripcion, tipoRegistro)
+    VALUES (?, ?, ?, ?, ?)
+  `,
+    [h.pacienteId, h.terapeutaId, h.fecha, h.descripcion, h.tipoRegistro],
+    function (err) {
+      if (err) return res.status(500).json({ error: "Error al guardar historial" })
+      res.status(201).json({ id: this.lastID, ...h })
+    }
+  )
+>>>>>>> 2951dc39c57b41afa55b85a85592f8307850fb52
 })
 
 app.get("/tipos-registro", (req, res) => {
@@ -305,4 +503,7 @@ const PORT = 3001
 app.listen(PORT, () => {
   console.log(`Servidor escuchando en http://localhost:${PORT}`)
 })
+<<<<<<< HEAD
 
+=======
+>>>>>>> 2951dc39c57b41afa55b85a85592f8307850fb52
