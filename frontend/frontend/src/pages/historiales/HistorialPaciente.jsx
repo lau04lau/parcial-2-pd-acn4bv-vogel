@@ -19,9 +19,13 @@ function HistorialPaciente({ pacientes, historiales, terapeutaActual }) {
       String(h.terapeutaId) === String(terapeutaActual.id)
   )
 
+  const historialesOrdenados = [...historialesBase].sort(
+    (a, b) => new Date(b.fecha) - new Date(a.fecha)
+  )
+
   const historialesFiltrados = filtroTipo
-    ? historialesBase.filter(h => h.tipoRegistro === filtroTipo)
-    : historialesBase
+    ? historialesOrdenados.filter(h => h.tipoRegistro === filtroTipo)
+    : historialesOrdenados
 
   const totalPaginas = Math.ceil(historialesFiltrados.length / porPagina) || 1
   const paginaSegura = Math.min(paginaActual, totalPaginas)

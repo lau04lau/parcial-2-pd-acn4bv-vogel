@@ -1,7 +1,8 @@
 const db = require("../db")
 
 function getAll(callback) {
-  db.all("SELECT * FROM historiales", [], callback)
+  db.all("SELECT * FROM historiales ORDER BY fecha", [], callback)
+
 }
 
 function create(historial, callback) {

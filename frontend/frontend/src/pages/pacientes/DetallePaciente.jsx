@@ -1,40 +1,18 @@
-import React, { useEffect, useState } from "react"
+import React from "react"
 import { useParams, useNavigate } from "react-router-dom"
 
-function DetallePaciente() {
+function DetallePaciente({ pacientes }) {
   const { id } = useParams()
   const navigate = useNavigate()
-  const [paciente, setPaciente] = useState(null)
-  const [cargando, setCargando] = useState(true)
-  const [error, setError] = useState("")
 
-  useEffect(() => {
-    const obtenerPaciente = async () => {
-      try {
-        const res = await fetch(`/pacientes/${id}`)
-        if (!res.ok) throw new Error("No se pudo obtener la información del paciente")
-        const data = await res.json()
-        setPaciente(data)
-      } catch (err) {
-        setError(err.message)
-      } finally {
-        setCargando(false)
-      }
-    }
-
-    obtenerPaciente()
-  }, [id])
-
-  if (cargando) {
-    return <p className="text-[#edf8f9] text-center">Cargando datos del paciente...</p>
-  }
-
-  if (error) {
-    return <p className="text-[#ffd1d1] text-center">{error}</p>
-  }
+  const paciente = pacientes.find(p => String(p.id) === id)
 
   if (!paciente) {
-    return <p className="text-[#ffd1d1] text-center">Paciente no encontrado.</p>
+    return (
+      <div className="bg-[#3c5a85] rounded-[14px] p-6 shadow-[0_6px_16px_rgba(0,0,0,0.12)]">
+        <p className="text-[#ffd1d1] text-center">Paciente no encontrado.</p>
+      </div>
+    )
   }
 
   return (
@@ -44,14 +22,30 @@ function DetallePaciente() {
       </h1>
 
       <div className="bg-[#ffffff] text-[#12263a] rounded-[12px] p-5 space-y-2">
-        <p><span className="font-semibold">Nombre:</span> {paciente.nombre} {paciente.apellido}</p>
-        <p><span className="font-semibold">DNI:</span> {paciente.dni}</p>
-        <p><span className="font-semibold">Teléfono:</span> {paciente.telefono}</p>
-        <p><span className="font-semibold">Fecha de nacimiento:</span> {paciente.fechaNac}</p>
-        <p><span className="font-semibold">Género:</span> {paciente.genero}</p>
-        <p><span className="font-semibold">Nivel educativo:</span> {paciente.nivelEducativo}</p>
-        <p><span className="font-semibold">Grado/Curso:</span> {paciente.gradoCurso}</p>
-        <p><span className="font-semibold">Motivo de consulta:</span></p>
+        <p>
+          <span className="font-semibold">Nombre:</span> {paciente.nombre} {paciente.apellido}
+        </p>
+        <p>
+          <span className="font-semibold">DNI:</span> {paciente.dni}
+        </p>
+        <p>
+          <span className="font-semibold">Teléfono:</span> {paciente.telefono}
+        </p>
+        <p>
+          <span className="font-semibold">Fecha de nacimiento:</span> {paciente.fechaNac}
+        </p>
+        <p>
+          <span className="font-semibold">Género:</span> {paciente.genero}
+        </p>
+        <p>
+          <span className="font-semibold">Nivel educativo:</span> {paciente.nivelEducativo}
+        </p>
+        <p>
+          <span className="font-semibold">Grado/Curso:</span> {paciente.gradoCurso}
+        </p>
+        <p>
+          <span className="font-semibold">Motivo de consulta:</span>
+        </p>
         <p className="whitespace-pre-line">{paciente.motivoConsulta}</p>
       </div>
 
