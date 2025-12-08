@@ -45,9 +45,7 @@ function App() {
     try {
       setCargandoPacientes(true)
       setErrorPacientes("")
-      const res = await fetch("/pacientes", {
-        headers: getAuthHeaders()
-      })
+      const res = await fetch("/pacientes", { headers: getAuthHeaders() })
       if (!res.ok) throw new Error("No se pudieron obtener los pacientes")
       const data = await res.json()
       setPacientes(data)
@@ -62,9 +60,7 @@ function App() {
     try {
       setCargandoTerapeutas(true)
       setErrorTerapeutas("")
-      const res = await fetch("/terapeutas", {
-        headers: getAuthHeaders()
-      })
+      const res = await fetch("/terapeutas", { headers: getAuthHeaders() })
       if (!res.ok) throw new Error("No se pudieron obtener los terapeutas")
       const data = await res.json()
       setTerapeutas(data)
@@ -79,9 +75,7 @@ function App() {
     try {
       setCargandoHistoriales(true)
       setErrorHistoriales("")
-      const res = await fetch("/historiales", {
-        headers: getAuthHeaders()
-      })
+      const res = await fetch("/historiales", { headers: getAuthHeaders() })
       if (!res.ok) throw new Error("No se pudieron obtener los historiales")
       const data = await res.json()
       setHistoriales(data)
@@ -93,10 +87,14 @@ function App() {
   }
 
   useEffect(() => {
-    cargarPacientes()
-    cargarTerapeutas()
-    cargarHistoriales()
-  }, [])
+    if (terapeutaActual) {
+      cargarPacientes()
+      cargarHistoriales()
+      if (terapeutaActual.esAdmin) {
+        cargarTerapeutas()
+      }
+    }
+  }, [terapeutaActual])
 
   const manejarPacienteGuardado = () => cargarPacientes()
 
@@ -107,7 +105,7 @@ function App() {
         headers: getAuthHeaders()
       })
       const data = await res.json()
-      if (!res.ok || !data.ok) throw new Error(data.error || "No se pudo eliminar el paciente")
+      if (!res.ok || !data.ok) throw new Error(data.error || "No se pudo eliminar")
       cargarPacientes()
     } catch (err) {
       alert(err.message)
@@ -123,7 +121,7 @@ function App() {
         headers: getAuthHeaders()
       })
       const data = await res.json()
-      if (!res.ok || !data.ok) throw new Error(data.error || "No se pudo eliminar el terapeuta")
+      if (!res.ok || !data.ok) throw new Error(data.error || "No se pudo eliminar")
       cargarTerapeutas()
     } catch (err) {
       alert(err.message)
@@ -134,20 +132,21 @@ function App() {
 
   const manejarLoginExitoso = terapeuta => {
     setTerapeutaActual(terapeuta)
-    cargarPacientes()
-    cargarTerapeutas()
-    cargarHistoriales()
   }
 
   const manejarLogout = () => {
     localStorage.removeItem("token")
     setTerapeutaActual(null)
+    setPacientes([])
+    setTerapeutas([])
+    setHistoriales([])
     navigate("/")
   }
 
   return (
     <div className="min-h-screen bg-[#eef7fa] text-[#12263a] flex flex-col">
       <NavBar terapeutaActual={terapeutaActual} onLogout={manejarLogout} />
+
       <main className="flex-grow flex justify-center items-start px-4 py-8">
         <div className="w-full max-w-5xl bg-[#344f74] text-[#edf8f9] rounded-[14px] shadow-[0_6px_16px_rgba(0,0,0,0.08)] p-6 md:p-8">
           <Routes>
@@ -160,7 +159,11 @@ function App() {
 
             <Route
               path="/terapeutas/nuevo"
-              element={<CargarTerapeuta onTerapeutaCreado={manejarTerapeutaGuardado} />}
+              element={
+                <ProtectedRoute isAuth={!!(terapeutaActual && terapeutaActual.esAdmin)}>
+                  <CargarTerapeuta onTerapeutaCreado={manejarTerapeutaGuardado} />
+                </ProtectedRoute>
+              }
             />
 
             <Route
@@ -236,7 +239,7 @@ function App() {
             <Route
               path="/terapeutas"
               element={
-                <ProtectedRoute isAuth={!!terapeutaActual}>
+                <ProtectedRoute isAuth={!!(terapeutaActual && terapeutaActual.esAdmin)}>
                   <ListarTerapeutas
                     terapeutas={terapeutas}
                     cargando={cargandoTerapeutas}
@@ -250,7 +253,7 @@ function App() {
             <Route
               path="/terapeutas/editar/:id"
               element={
-                <ProtectedRoute isAuth={!!terapeutaActual}>
+                <ProtectedRoute isAuth={!!(terapeutaActual && terapeutaActual.esAdmin)}>
                   <EditarTerapeuta
                     terapeutas={terapeutas}
                     onTerapeutaGuardado={manejarTerapeutaGuardado}
@@ -262,7 +265,7 @@ function App() {
             <Route
               path="/terapeutas/detalle/:id"
               element={
-                <ProtectedRoute isAuth={!!terapeutaActual}>
+                <ProtectedRoute isAuth={!!(terapeutaActual && terapeutaActual.esAdmin)}>
                   <DetalleTerapeuta terapeutas={terapeutas} />
                 </ProtectedRoute>
               }

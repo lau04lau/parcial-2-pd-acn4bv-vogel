@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import TerapeutaForm from "../../forms/TerapeutaForm"
 
@@ -6,6 +6,24 @@ function EditarTerapeuta({ terapeutas, onTerapeutaGuardado }) {
   const { id } = useParams()
   const navigate = useNavigate()
   const terapeuta = terapeutas.find(t => String(t.id) === id)
+
+  useEffect(() => {
+    const token = localStorage.getItem("token")
+    if (!token) {
+      navigate("/acceso-denegado")
+      return
+    }
+    try {
+      const [, payloadBase64] = token.split(".")
+      const payloadJson = atob(payloadBase64)
+      const payload = JSON.parse(payloadJson)
+      if (!payload.esAdmin) {
+        navigate("/acceso-denegado")
+      }
+    } catch (e) {
+      navigate("/acceso-denegado")
+    }
+  }, [navigate])
 
   const manejarGuardado = () => {
     onTerapeutaGuardado()

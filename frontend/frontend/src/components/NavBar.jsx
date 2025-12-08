@@ -4,6 +4,7 @@ import { NavLink, useNavigate } from "react-router-dom"
 function NavBar({ terapeutaActual, onLogout }) {
   const navigate = useNavigate()
   const [openPacientes, setOpenPacientes] = useState(false)
+  const [openTerapeutas, setOpenTerapeutas] = useState(false)
 
   const handleLogout = () => {
     if (window.confirm("¿Deseás cerrar sesión?")) {
@@ -15,6 +16,13 @@ function NavBar({ terapeutaActual, onLogout }) {
     navigate(ruta)
     setOpenPacientes(false)
   }
+
+  const irATerapeutas = ruta => {
+    navigate(ruta)
+    setOpenTerapeutas(false)
+  }
+
+  const esAdmin = terapeutaActual && terapeutaActual.esAdmin
 
   return (
     <div className="w-full bg-[#12263a] shadow-md">
@@ -50,7 +58,10 @@ function NavBar({ terapeutaActual, onLogout }) {
               <div className="relative">
                 <button
                   type="button"
-                  onClick={() => setOpenPacientes(prev => !prev)}
+                  onClick={() => {
+                    setOpenPacientes(prev => !prev)
+                    setOpenTerapeutas(false)
+                  }}
                   className="px-4 py-2 rounded-full bg-[#e8f3fb] text-[#12263a] font-medium hover:bg-[#d6e8f7] transition flex items-center gap-1"
                 >
                   Pacientes
@@ -67,6 +78,38 @@ function NavBar({ terapeutaActual, onLogout }) {
                     <button
                       className="w-full text-left px-4 py-2 text-[#e8f3fb] hover:bg-[#3c5a85] text-sm"
                       onClick={() => irAPacientes("/pacientes")}
+                    >
+                      Listado
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {terapeutaActual && esAdmin && (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpenTerapeutas(prev => !prev)
+                    setOpenPacientes(false)
+                  }}
+                  className="px-4 py-2 rounded-full bg-[#e8f3fb] text-[#12263a] font-medium hover:bg-[#d6e8f7] transition flex items-center gap-1"
+                >
+                  Terapeutas
+                  <span className="text-xs">▾</span>
+                </button>
+                {openTerapeutas && (
+                  <div className="absolute right-0 mt-2 w-44 rounded-lg bg-[#12263a] border border-[#3c5a85] shadow-lg z-20">
+                    <button
+                      className="w-full text-left px-4 py-2 text-[#e8f3fb] hover:bg-[#3c5a85] text-sm"
+                      onClick={() => irATerapeutas("/terapeutas/nuevo")}
+                    >
+                      Agregar
+                    </button>
+                    <button
+                      className="w-full text-left px-4 py-2 text-[#e8f3fb] hover:bg-[#3c5a85] text-sm"
+                      onClick={() => irATerapeutas("/terapeutas")}
                     >
                       Listado
                     </button>
@@ -101,6 +144,7 @@ function NavBar({ terapeutaActual, onLogout }) {
           {terapeutaActual && (
             <span className="text-xs md:text-sm text-[#e8f3fbcc] font-medium">
               {terapeutaActual.usuario}
+              {esAdmin ? " (admin)" : ""}
             </span>
           )}
         </div>

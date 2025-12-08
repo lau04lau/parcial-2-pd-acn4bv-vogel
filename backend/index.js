@@ -10,7 +10,7 @@ const historialModel = require("./models/historialModel")
 const app = express()
 app.use(express.json())
 
-const JWT_SECRET = process.env.JWT_SECRET || "clave_super_secreta_muy_larga"
+const JWT_SECRET = process.env.JWT_SECRET || "2tW5Hk8jRzM9pG7f"
 
 const manejarValidacion = (req, res, next) => {
   const errors = validationResult(req)
@@ -38,6 +38,13 @@ const autenticarToken = (req, res, next) => {
     req.usuario = usuario
     next()
   })
+}
+
+const soloAdmin = (req, res, next) => {
+  if (!req.usuario || !req.usuario.esAdmin) {
+    return res.status(403).json({ error: "Acceso solo para administradores" })
+  }
+  next()
 }
 
 const validacionesPaciente = [
@@ -244,7 +251,7 @@ app.delete("/pacientes/:id", autenticarToken, (req, res) => {
   })
 })
 
-app.get("/terapeutas", autenticarToken, (req, res) => {
+app.get("/terapeutas", autenticarToken, soloAdmin, (req, res) => {
   terapeutaModel.getAllPublic((err, rows) => {
     if (err) return res.status(500).json({ error: "Error al obtener terapeutas" })
     res.json(rows)
@@ -254,13 +261,15 @@ app.get("/terapeutas", autenticarToken, (req, res) => {
 app.post(
   "/terapeutas",
   autenticarToken,
+  soloAdmin,
   validacionesTerapeuta,
   manejarValidacion,
   (req, res) => {
     const usuario = req.body.usuario.trim()
     const contrasenia = req.body.contrasenia.trim()
+    const esAdmin = !!req.body.esAdmin
     const hash = bcrypt.hashSync(contrasenia, 10)
-    terapeutaModel.create(usuario, hash, (err, nuevo) => {
+    terapeutaModel.create(usuario, hash, esAdmin, (err, nuevo) => {
       if (err) {
         if (err.code === "SQLITE_CONSTRAINT") {
           return res.status(400).json({ error: "El usuario ya está registrado" })
@@ -275,14 +284,16 @@ app.post(
 app.put(
   "/terapeutas/:id",
   autenticarToken,
+  soloAdmin,
   validacionesTerapeuta,
   manejarValidacion,
   (req, res) => {
     const id = Number(req.params.id)
     const usuario = req.body.usuario.trim()
     const contrasenia = req.body.contrasenia.trim()
+    const esAdmin = !!req.body.esAdmin
     const hash = bcrypt.hashSync(contrasenia, 10)
-    terapeutaModel.update(id, usuario, hash, (err, changes) => {
+    terapeutaModel.update(id, usuario, hash, esAdmin, (err, changes) => {
       if (err) {
         if (err.code === "SQLITE_CONSTRAINT") {
           return res.status(400).json({ error: "El usuario ya está registrado" })
@@ -290,12 +301,12 @@ app.put(
         return res.status(500).json({ error: "Error al actualizar terapeuta" })
       }
       if (changes === 0) return res.status(404).json({ error: "Terapeuta no encontrado" })
-      res.json({ id, usuario })
+      res.json({ id, usuario, esAdmin })
     })
   }
 )
 
-app.delete("/terapeutas/:id", autenticarToken, (req, res) => {
+app.delete("/terapeutas/:id", autenticarToken, soloAdmin, (req, res) => {
   const id = Number(req.params.id)
   terapeutaModel.remove(id, (err, changes) => {
     if (err) return res.status(500).json({ error: "Error al eliminar terapeuta" })
@@ -316,15 +327,16 @@ app.post(
       if (!row) return res.status(401).json({ error: "Usuario o contraseña incorrectos" })
       const coincide = bcrypt.compareSync(contrasenia, row.contrasenia)
       if (!coincide) return res.status(401).json({ error: "Usuario o contraseña incorrectos" })
+      const esAdmin = row.esAdmin === 1
       const token = jwt.sign(
-        { id: row.id, usuario: row.usuario },
+        { id: row.id, usuario: row.usuario, esAdmin },
         JWT_SECRET,
         { expiresIn: "8h" }
       )
       res.json({
         ok: true,
         token,
-        terapeuta: { id: row.id, usuario: row.usuario }
+        terapeuta: { id: row.id, usuario: row.usuario, esAdmin }
       })
     })
   }
@@ -417,7 +429,39 @@ app.post(
   }
 )
 
+const inicializarTerapeutaAdmin = () => {
+  db.run(
+    "ALTER TABLE terapeutas ADD COLUMN es_admin INTEGER NOT NULL DEFAULT 0",
+    err => {
+      if (err && !String(err.message || "").includes("duplicate column name")) {
+        console.error("Error al agregar columna es_admin en terapeutas:", err.message)
+      }
+      db.get("SELECT COUNT(*) as total FROM terapeutas", [], (err2, row) => {
+        if (err2) {
+          console.error("Error al contar terapeutas:", err2.message)
+          return
+        }
+        if (row && row.total === 0) {
+          const hash = bcrypt.hashSync("4545", 10)
+          db.run(
+            "INSERT INTO terapeutas (usuario, contrasenia, es_admin) VALUES (?, ?, 1)",
+            ["laura861", hash],
+            err3 => {
+              if (err3) {
+                console.error("Error al crear terapeuta admin inicial:", err3.message)
+              } else {
+                console.log("Terapeuta administrador inicial creado: usuario laura861")
+              }
+            }
+          )
+        }
+      })
+    }
+  )
+}
+
 const PORT = 3001
 app.listen(PORT, () => {
   console.log(`Servidor escuchando en http://localhost:${PORT}`)
+  inicializarTerapeutaAdmin()
 })

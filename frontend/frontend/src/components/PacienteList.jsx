@@ -8,11 +8,8 @@ function PacienteList({ pacientes, onEliminar }) {
   const [pacienteAEliminar, setPacienteAEliminar] = useState(null)
   const porPagina = 5
 
-  if (!pacientes.length) {
-    return <p className="text-sm text-[#edf8f9]">No hay pacientes cargados.</p>
-  }
-
   const pacientesFiltrados = useMemo(() => {
+    if (!pacientes || pacientes.length === 0) return []
     const termino = busqueda.trim().toLowerCase()
     if (!termino) return pacientes
     return pacientes.filter(p => {
@@ -31,6 +28,7 @@ function PacienteList({ pacientes, onEliminar }) {
   const paginaSegura = Math.min(paginaActual, totalPaginas)
   const inicio = (paginaSegura - 1) * porPagina
   const pacientesPagina = pacientesFiltrados.slice(inicio, inicio + porPagina)
+  const hayPacientes = pacientes && pacientes.length > 0
 
   const cambiarPagina = pagina => {
     if (pagina < 1 || pagina > totalPaginas) return
@@ -70,7 +68,11 @@ function PacienteList({ pacientes, onEliminar }) {
         </div>
 
         <div className="max-h-80 overflow-y-auto">
-          {pacientesFiltrados.length === 0 ? (
+          {!hayPacientes ? (
+            <p className="text-sm text-[#555] px-4 py-3">
+              No hay pacientes cargados.
+            </p>
+          ) : pacientesFiltrados.length === 0 ? (
             <p className="text-sm text-[#555] px-4 py-3">
               No hay pacientes que coincidan con la búsqueda.
             </p>
@@ -122,35 +124,37 @@ function PacienteList({ pacientes, onEliminar }) {
           )}
         </div>
 
-        <div className="flex items-center justify-between px-4 py-2 text-xs">
-          <span>
-            Página {paginaSegura} de {totalPaginas}
-          </span>
-          <div className="flex gap-3">
-            <button
-              onClick={() => cambiarPagina(paginaSegura - 1)}
-              disabled={paginaSegura === 1}
-              className={`${
-                paginaSegura === 1
-                  ? "text-[#a0a0a0] cursor-default"
-                  : "text-[#3c5a85] hover:underline cursor-pointer"
-              } bg-transparent border-none outline-none`}
-            >
-              Anterior
-            </button>
-            <button
-              onClick={() => cambiarPagina(paginaSegura + 1)}
-              disabled={paginaSegura === totalPaginas}
-              className={`${
-                paginaSegura === totalPaginas
-                  ? "text-[#a0a0a0] cursor-default"
-                  : "text-[#3c5a85] hover:underline cursor-pointer"
-              } bg-transparent border-none outline-none`}
-            >
-              Siguiente
-            </button>
+        {hayPacientes && pacientesFiltrados.length > 0 && (
+          <div className="flex items-center justify-between px-4 py-2 text-xs">
+            <span>
+              Página {paginaSegura} de {totalPaginas}
+            </span>
+            <div className="flex gap-3">
+              <button
+                onClick={() => cambiarPagina(paginaSegura - 1)}
+                disabled={paginaSegura === 1}
+                className={`${
+                  paginaSegura === 1
+                    ? "text-[#a0a0a0] cursor-default"
+                    : "text-[#3c5a85] hover:underline cursor-pointer"
+                } bg-transparent border-none outline-none`}
+              >
+                Anterior
+              </button>
+              <button
+                onClick={() => cambiarPagina(paginaSegura + 1)}
+                disabled={paginaSegura === totalPaginas}
+                className={`${
+                  paginaSegura === totalPaginas
+                    ? "text-[#a0a0a0] cursor-default"
+                    : "text-[#3c5a85] hover:underline cursor-pointer"
+                } bg-transparent border-none outline-none`}
+              >
+                Siguiente
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {pacienteAEliminar && (
