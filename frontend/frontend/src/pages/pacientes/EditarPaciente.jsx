@@ -1,15 +1,15 @@
 import React from "react"
-import { useParams, useNavigate } from "react-router-dom"
+import { useParams } from "react-router-dom"
 import PacienteForm from "../../forms/PacienteForm"
 
 function EditarPaciente({ pacientes, onPacienteGuardado }) {
   const { id } = useParams()
-  const navigate = useNavigate()
   const paciente = pacientes.find(p => String(p.id) === id)
 
   const manejarGuardado = () => {
-    onPacienteGuardado()
-    navigate("/pacientes")
+    if (onPacienteGuardado) {
+      onPacienteGuardado()
+    }
   }
 
   if (!paciente) {
