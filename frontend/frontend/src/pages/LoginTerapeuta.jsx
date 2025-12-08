@@ -29,6 +29,9 @@ function LoginTerapeuta({ onLoginExitoso }) {
       if (!res.ok || !data.ok) {
         throw new Error(data.error || "Credenciales inválidas")
       }
+      if (data.token) {
+        localStorage.setItem("token", data.token)
+      }
       if (onLoginExitoso) onLoginExitoso(data.terapeuta)
       setMensaje("Inicio de sesión correcto")
       navigate("/pacientes")

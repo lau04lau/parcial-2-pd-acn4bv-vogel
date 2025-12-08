@@ -1,6 +1,7 @@
 const express = require("express")
 const bcrypt = require("bcrypt")
 const { body, validationResult } = require("express-validator")
+const jwt = require("jsonwebtoken")
 const db = require("./db")
 const pacienteModel = require("./models/pacienteModel")
 const terapeutaModel = require("./models/terapeutaModel")
@@ -8,6 +9,8 @@ const historialModel = require("./models/historialModel")
 
 const app = express()
 app.use(express.json())
+
+const JWT_SECRET = process.env.JWT_SECRET || "clave_super_secreta_muy_larga"
 
 const manejarValidacion = (req, res, next) => {
   const errors = validationResult(req)
@@ -20,6 +23,21 @@ const manejarValidacion = (req, res, next) => {
     })
   }
   next()
+}
+
+const autenticarToken = (req, res, next) => {
+  const authHeader = req.headers["authorization"]
+  const token = authHeader && authHeader.split(" ")[1]
+  if (!token) {
+    return res.status(401).json({ error: "Token requerido" })
+  }
+  jwt.verify(token, JWT_SECRET, (err, usuario) => {
+    if (err) {
+      return res.status(403).json({ error: "Token inválido o expirado" })
+    }
+    req.usuario = usuario
+    next()
+  })
 }
 
 const validacionesPaciente = [
@@ -149,14 +167,14 @@ const validarDniUnicoEditar = (req, res, next) => {
   })
 }
 
-app.get("/pacientes", (req, res) => {
+app.get("/pacientes", autenticarToken, (req, res) => {
   pacienteModel.getAll((err, rows) => {
     if (err) return res.status(500).json({ error: "Error al obtener pacientes" })
     res.json(rows)
   })
 })
 
-app.get("/pacientes/:id", (req, res) => {
+app.get("/pacientes/:id", autenticarToken, (req, res) => {
   const id = Number(req.params.id)
   pacienteModel.getById(id, (err, row) => {
     if (err) return res.status(500).json({ error: "Error al obtener paciente" })
@@ -167,6 +185,7 @@ app.get("/pacientes/:id", (req, res) => {
 
 app.post(
   "/pacientes",
+  autenticarToken,
   validacionesPaciente,
   manejarValidacion,
   validarDniUnicoCrear,
@@ -191,6 +210,7 @@ app.post(
 
 app.put(
   "/pacientes/:id",
+  autenticarToken,
   validacionesPaciente,
   manejarValidacion,
   validarDniUnicoEditar,
@@ -215,7 +235,7 @@ app.put(
   }
 )
 
-app.delete("/pacientes/:id", (req, res) => {
+app.delete("/pacientes/:id", autenticarToken, (req, res) => {
   const id = Number(req.params.id)
   pacienteModel.remove(id, (err, changes) => {
     if (err) return res.status(500).json({ error: "Error al eliminar paciente" })
@@ -224,7 +244,7 @@ app.delete("/pacientes/:id", (req, res) => {
   })
 })
 
-app.get("/terapeutas", (req, res) => {
+app.get("/terapeutas", autenticarToken, (req, res) => {
   terapeutaModel.getAllPublic((err, rows) => {
     if (err) return res.status(500).json({ error: "Error al obtener terapeutas" })
     res.json(rows)
@@ -233,6 +253,7 @@ app.get("/terapeutas", (req, res) => {
 
 app.post(
   "/terapeutas",
+  autenticarToken,
   validacionesTerapeuta,
   manejarValidacion,
   (req, res) => {
@@ -253,6 +274,7 @@ app.post(
 
 app.put(
   "/terapeutas/:id",
+  autenticarToken,
   validacionesTerapeuta,
   manejarValidacion,
   (req, res) => {
@@ -273,7 +295,7 @@ app.put(
   }
 )
 
-app.delete("/terapeutas/:id", (req, res) => {
+app.delete("/terapeutas/:id", autenticarToken, (req, res) => {
   const id = Number(req.params.id)
   terapeutaModel.remove(id, (err, changes) => {
     if (err) return res.status(500).json({ error: "Error al eliminar terapeuta" })
@@ -294,12 +316,21 @@ app.post(
       if (!row) return res.status(401).json({ error: "Usuario o contraseña incorrectos" })
       const coincide = bcrypt.compareSync(contrasenia, row.contrasenia)
       if (!coincide) return res.status(401).json({ error: "Usuario o contraseña incorrectos" })
-      res.json({ ok: true, terapeuta: { id: row.id, usuario: row.usuario } })
+      const token = jwt.sign(
+        { id: row.id, usuario: row.usuario },
+        JWT_SECRET,
+        { expiresIn: "8h" }
+      )
+      res.json({
+        ok: true,
+        token,
+        terapeuta: { id: row.id, usuario: row.usuario }
+      })
     })
   }
 )
 
-app.get("/historiales", (req, res) => {
+app.get("/historiales", autenticarToken, (req, res) => {
   historialModel.getAll((err, rows) => {
     if (err) return res.status(500).json({ error: "Error al obtener historiales" })
     res.json(rows)
@@ -308,6 +339,7 @@ app.get("/historiales", (req, res) => {
 
 app.post(
   "/historiales",
+  autenticarToken,
   validacionesHistorial,
   manejarValidacion,
   (req, res) => {
@@ -325,7 +357,7 @@ app.post(
   }
 )
 
-app.get("/tipos-registro", (req, res) => {
+app.get("/tipos-registro", autenticarToken, (req, res) => {
   db.all("SELECT * FROM tipos_registro", [], (err, rows) => {
     if (err) return res.status(500).json({ error: "Error al obtener tipos de registro" })
     res.json(rows)
@@ -334,6 +366,7 @@ app.get("/tipos-registro", (req, res) => {
 
 app.post(
   "/tipos-registro",
+  autenticarToken,
   validacionesTipoRegistro,
   manejarValidacion,
   (req, res) => {
@@ -354,7 +387,7 @@ app.post(
   }
 )
 
-app.get("/niveles-educativos", (req, res) => {
+app.get("/niveles-educativos", autenticarToken, (req, res) => {
   db.all("SELECT * FROM niveles_educativos", [], (err, rows) => {
     if (err) return res.status(500).json({ error: "Error al obtener niveles educativos" })
     res.json(rows)
@@ -363,6 +396,7 @@ app.get("/niveles-educativos", (req, res) => {
 
 app.post(
   "/niveles-educativos",
+  autenticarToken,
   validacionesNivelEducativo,
   manejarValidacion,
   (req, res) => {

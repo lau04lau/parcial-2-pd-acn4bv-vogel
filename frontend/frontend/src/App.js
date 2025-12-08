@@ -28,11 +28,26 @@ function App() {
   const [errorHistoriales, setErrorHistoriales] = useState("")
   const navigate = useNavigate()
 
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem("token")
+    if (token) {
+      return {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      }
+    }
+    return {
+      "Content-Type": "application/json"
+    }
+  }
+
   const cargarPacientes = async () => {
     try {
       setCargandoPacientes(true)
       setErrorPacientes("")
-      const res = await fetch("/pacientes")
+      const res = await fetch("/pacientes", {
+        headers: getAuthHeaders()
+      })
       if (!res.ok) throw new Error("No se pudieron obtener los pacientes")
       const data = await res.json()
       setPacientes(data)
@@ -47,7 +62,9 @@ function App() {
     try {
       setCargandoTerapeutas(true)
       setErrorTerapeutas("")
-      const res = await fetch("/terapeutas")
+      const res = await fetch("/terapeutas", {
+        headers: getAuthHeaders()
+      })
       if (!res.ok) throw new Error("No se pudieron obtener los terapeutas")
       const data = await res.json()
       setTerapeutas(data)
@@ -62,7 +79,9 @@ function App() {
     try {
       setCargandoHistoriales(true)
       setErrorHistoriales("")
-      const res = await fetch("/historiales")
+      const res = await fetch("/historiales", {
+        headers: getAuthHeaders()
+      })
       if (!res.ok) throw new Error("No se pudieron obtener los historiales")
       const data = await res.json()
       setHistoriales(data)
@@ -83,7 +102,10 @@ function App() {
 
   const manejarEliminarPaciente = async id => {
     try {
-      const res = await fetch(`/pacientes/${id}`, { method: "DELETE" })
+      const res = await fetch(`/pacientes/${id}`, {
+        method: "DELETE",
+        headers: getAuthHeaders()
+      })
       const data = await res.json()
       if (!res.ok || !data.ok) throw new Error(data.error || "No se pudo eliminar el paciente")
       cargarPacientes()
@@ -96,7 +118,10 @@ function App() {
 
   const manejarEliminarTerapeuta = async id => {
     try {
-      const res = await fetch(`/terapeutas/${id}`, { method: "DELETE" })
+      const res = await fetch(`/terapeutas/${id}`, {
+        method: "DELETE",
+        headers: getAuthHeaders()
+      })
       const data = await res.json()
       if (!res.ok || !data.ok) throw new Error(data.error || "No se pudo eliminar el terapeuta")
       cargarTerapeutas()
@@ -109,9 +134,13 @@ function App() {
 
   const manejarLoginExitoso = terapeuta => {
     setTerapeutaActual(terapeuta)
+    cargarPacientes()
+    cargarTerapeutas()
+    cargarHistoriales()
   }
 
   const manejarLogout = () => {
+    localStorage.removeItem("token")
     setTerapeutaActual(null)
     navigate("/")
   }

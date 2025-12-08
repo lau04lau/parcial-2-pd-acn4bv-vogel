@@ -52,9 +52,14 @@ function PacienteForm({ onPacienteCreado, paciente }) {
     try {
       const url = esEdicion ? `/pacientes/${paciente.id}` : "/pacientes"
       const method = esEdicion ? "PUT" : "POST"
+
+      const token = localStorage.getItem("token")
+      const headers = { "Content-Type": "application/json" }
+      if (token) headers.Authorization = `Bearer ${token}`
+
       const res = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(form)
       })
       const data = await res.json()
@@ -138,7 +143,6 @@ function PacienteForm({ onPacienteCreado, paciente }) {
         </select>
       </div>
 
-      {/* textarea movido al final */}
       <div className="flex flex-col gap-1 max-w-md mx-auto">
         <label className="text-sm font-medium text-[#edf8f9] text-left">
           Motivo de consulta

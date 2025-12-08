@@ -33,6 +33,10 @@ function AgregarHistorial({ pacientes, terapeutaActual, onHistorialCreado }) {
     setMensaje("")
     setEnviando(true)
     try {
+      const token = localStorage.getItem("token")
+      const headers = { "Content-Type": "application/json" }
+      if (token) headers.Authorization = `Bearer ${token}`
+
       const body = {
         pacienteId: paciente.id,
         terapeutaId: terapeutaActual.id,
@@ -42,7 +46,7 @@ function AgregarHistorial({ pacientes, terapeutaActual, onHistorialCreado }) {
       }
       const res = await fetch("/historiales", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(body)
       })
       const data = await res.json()
@@ -75,7 +79,6 @@ function AgregarHistorial({ pacientes, terapeutaActual, onHistorialCreado }) {
           onChange={handleChange}
         />
 
-        {/* Select con las opciones de tipo de registro */}
         <div className="flex flex-col gap-1 max-w-md mx-auto">
           <label className="text-sm font-medium text-[#edf8f9] text-left">
             Tipo de registro

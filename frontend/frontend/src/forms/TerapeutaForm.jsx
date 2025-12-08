@@ -33,9 +33,14 @@ function TerapeutaForm({ onTerapeutaCreado, terapeuta }) {
     try {
       const url = esEdicion ? `/terapeutas/${terapeuta.id}` : "/terapeutas"
       const method = esEdicion ? "PUT" : "POST"
+
+      const token = localStorage.getItem("token")
+      const headers = { "Content-Type": "application/json" }
+      if (token) headers.Authorization = `Bearer ${token}`
+
       const res = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(form)
       })
       const data = await res.json()
